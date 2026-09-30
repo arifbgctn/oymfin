@@ -1,0 +1,128 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface-2: #eef2f5;
+  --text: #0f172a;
+  --muted: #5b6b7f;
+  --border: #e2e8f0;
+  --accent: #0f766e;
+  --accent-soft: #ccfbf1;
+  --accent-fg: #ffffff;
+  --income: #047857;
+  --expense: #be123c;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --danger-soft: #ffe4e6;
+  --ok-soft: #d1fae5;
+  --pal-0: #2a78d6;
+  --pal-1: #eb6834;
+  --pal-2: #1baf7a;
+  --pal-3: #eda100;
+  --pal-4: #e87ba4;
+  --pal-5: #008300;
+  --pal-6: #4a3aa7;
+  --pal-7: #e34948;
+  --pal-8: #0e7490;
+  --pal-9: #64748b;
+  --chart-income: #2a78d6;
+  --chart-expense: #eb6834;
+  --grid: #e1e0d9;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0b1120;
+  --surface: #111a2e;
+  --surface-2: #1b2640;
+  --text: #e6ebf2;
+  --muted: #9aa8bc;
+  --border: #22304d;
+  --accent: #2dd4bf;
+  --accent-soft: #134e4a;
+  --accent-fg: #042f2e;
+  --income: #34d399;
+  --expense: #fb7185;
+  --warn: #fbbf24;
+  --warn-soft: #451a03;
+  --danger-soft: #4c0519;
+  --ok-soft: #064e3b;
+  --pal-0: #3987e5;
+  --pal-1: #d95926;
+  --pal-2: #199e70;
+  --pal-3: #c98500;
+  --pal-4: #d55181;
+  --pal-5: #008300;
+  --pal-6: #9085e9;
+  --pal-7: #e66767;
+  --pal-8: #22a3c4;
+  --pal-9: #94a3b8;
+  --chart-income: #3987e5;
+  --chart-expense: #d95926;
+  --grid: #2c2c2a;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-fg: var(--accent-fg);
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger-soft: var(--danger-soft);
+  --color-ok-soft: var(--ok-soft);
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  overscroll-behavior-y: none;
+}
+
+/* iOS: 16px altı yazı tipinde odaklanınca yakınlaştırma yapar. */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.px-safe {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+.px-gutter {
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+}
+.fab-safe {
+  bottom: calc(env(safe-area-inset-bottom) + 5rem);
+}
