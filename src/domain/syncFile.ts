@@ -1,3 +1,4 @@
+import { isCurrencyCode, type CurrencySetting } from './currency';
 import { isDateKey, isMonthKey, toMonthKey } from './month';
 import { SYNC_TABLES, type Dataset, type SyncTable, type Tombstone } from './types';
 
@@ -10,14 +11,17 @@ export interface SyncFile extends Dataset {
   schemaVersion: number;
   deviceName: string;
   exportedAt: number;
+  /** Eski sürümlerin dosyalarında yok; eski sürümler bu alanı yok sayar. */
+  settings?: { currency: CurrencySetting };
 }
 
-export function buildSyncFile(ds: Dataset, deviceName: string, now: number): SyncFile {
+export function buildSyncFile(ds: Dataset, deviceName: string, now: number, currency?: CurrencySetting): SyncFile {
   return {
     app: APP_ID,
     schemaVersion: SCHEMA_VERSION,
     deviceName,
     exportedAt: now,
+    ...(currency ? { settings: { currency } } : {}),
     categories: ds.categories,
     transactions: ds.transactions,
     budgets: ds.budgets,
@@ -31,7 +35,7 @@ export function buildSyncFile(ds: Dataset, deviceName: string, now: number): Syn
 }
 
 export type ParseResult =
-  | { ok: true; dataset: Dataset; deviceName: string; exportedAt: number }
+  | { ok: true; dataset: Dataset; deviceName: string; exportedAt: number; currency?: CurrencySetting }
   | { ok: false; error: string };
 
 type Rec = Record<string, unknown>;
@@ -167,5 +171,13 @@ export function parseSyncFile(text: string): ParseResult {
     dataset,
     deviceName: typeof json.deviceName === 'string' ? json.deviceName : 'Bilinmeyen cihaz',
     exportedAt: ts(json.exportedAt) ? (json.exportedAt as number) : 0,
+    currency: parseCurrencySetting(json.settings),
   };
+}
+
+/** Ayar bozuksa veri eşitlemesi engellenmez; ayar yok sayılır. */
+function parseCurrencySetting(settings: unknown): CurrencySetting | undefined {
+  const c = isObj(settings) ? settings.currency : undefined;
+  if (!isObj(c) || !isCurrencyCode(c.currency) || !ts(c.updatedAt)) return undefined;
+  return { currency: c.currency, updatedAt: c.updatedAt as number };
 }

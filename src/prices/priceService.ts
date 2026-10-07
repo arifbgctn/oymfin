@@ -1,8 +1,9 @@
 import { db } from '../db/db';
+import { currencyInfo, getActiveCurrency, type CurrencyCode } from '../domain/currency';
 import {
   AUTO_SYMBOL_MAP,
   COINGECKO_URL,
-  CURRENCY_API_URLS,
+  currencyApiUrls,
   isFresh,
   parseCoinGecko,
   parseCurrencyApi,
@@ -17,6 +18,8 @@ export interface RefreshOptions {
   fetchImpl?: typeof fetch;
   now?: number;
   timeoutMs?: number;
+  /** Fiyatların birimi; verilmezse ayarlardaki para birimi */
+  currency?: CurrencyCode;
 }
 
 async function fetchJson(url: string, fetchImpl: typeof fetch, timeoutMs: number): Promise<unknown> {
@@ -39,6 +42,8 @@ async function fetchJson(url: string, fetchImpl: typeof fetch, timeoutMs: number
  */
 export async function refreshPrices(symbols: string[], opts: RefreshOptions = {}): Promise<RefreshStatus> {
   const { force = false, fetchImpl = fetch, now = Date.now(), timeoutMs = 8000 } = opts;
+  const currency = opts.currency ?? getActiveCurrency();
+  const base = currencyInfo(currency).apiKey;
   const wanted = [...new Set(symbols)].map((s) => AUTO_SYMBOL_MAP.get(s)).filter((s): s is AutoSymbol => !!s);
   if (wanted.length === 0) return 'idle';
 
@@ -52,8 +57,8 @@ export async function refreshPrices(symbols: string[], opts: RefreshOptions = {}
   if (crypto.length) {
     try {
       const ids = crypto.map((s) => s.coingeckoId).join(',');
-      const json = await fetchJson(`${COINGECKO_URL}?ids=${ids}&vs_currencies=try`, fetchImpl, timeoutMs);
-      for (const [symbol, priceKurus] of parseCoinGecko(json, crypto)) found.set(symbol, { symbol, priceKurus, fetchedAt: now, source: 'CoinGecko' });
+      const json = await fetchJson(`${COINGECKO_URL}?ids=${ids}&vs_currencies=${base}`, fetchImpl, timeoutMs);
+      for (const [symbol, priceKurus] of parseCoinGecko(json, crypto, base)) found.set(symbol, { symbol, priceKurus, fetchedAt: now, source: 'CoinGecko' });
     } catch {
       /* currency-api'ye düşülür */
     }
@@ -61,10 +66,10 @@ export async function refreshPrices(symbols: string[], opts: RefreshOptions = {}
 
   const rest = wanted.filter((s) => !found.has(s.symbol));
   if (rest.length) {
-    for (const url of CURRENCY_API_URLS) {
+    for (const url of currencyApiUrls(base)) {
       try {
         const json = await fetchJson(url, fetchImpl, timeoutMs);
-        const parsed = parseCurrencyApi(json, rest);
+        const parsed = parseCurrencyApi(json, rest, base);
         if (parsed.size === 0) continue;
         for (const [symbol, priceKurus] of parsed) found.set(symbol, { symbol, priceKurus, fetchedAt: now, source: 'currency-api' });
         break;
@@ -74,6 +79,8 @@ export async function refreshPrices(symbols: string[], opts: RefreshOptions = {}
     }
   }
 
+  // İstek sürerken para birimi değiştiyse eski birimdeki fiyatlar yazılmaz.
+  if (opts.currency === undefined && getActiveCurrency() !== currency) return 'failed';
   if (found.size) await db.prices.bulkPut([...found.values()]);
   if (found.size === wanted.length) return 'updated';
   return found.size > 0 ? 'partial' : 'failed';

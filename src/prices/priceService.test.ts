@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { db } from '../db/db';
+import { setActiveCurrency } from '../domain/currency';
 import { COINGECKO_URL, CURRENCY_API_URLS, PRICE_MAX_AGE_MS } from '../domain/prices';
 import { refreshPrices } from './priceService';
 
@@ -63,6 +64,26 @@ describe('refreshPrices', () => {
   it('reports partial results', async () => {
     const f = mockFetch((url) => (url.startsWith(COINGECKO_URL) ? {} : { try: { usd: 0.02 } }));
     expect(await refreshPrices(['USD', 'ETH'], { fetchImpl: f })).toBe('partial');
+  });
+
+  it('fetches prices in the selected currency', async () => {
+    setActiveCurrency('USD');
+    const f = mockFetch((url) => (url.startsWith(COINGECKO_URL) ? { bitcoin: { usd: 100000 } } : { usd: { eur: 0.8 } }));
+    expect(await refreshPrices(['EUR', 'BTC'], { fetchImpl: f })).toBe('updated');
+    const urls = f.mock.calls.map((c) => String(c[0]));
+    expect(urls.some((u) => u.includes('vs_currencies=usd'))).toBe(true);
+    expect(urls.some((u) => u.endsWith('/currencies/usd.json'))).toBe(true);
+    expect((await db.prices.get('EUR'))?.priceKurus).toBe(125);
+    expect((await db.prices.get('BTC'))?.priceKurus).toBe(10000000);
+  });
+
+  it('drops results when the currency changes mid-request', async () => {
+    const f = mockFetch((url) => {
+      setActiveCurrency('EUR');
+      return url.startsWith(COINGECKO_URL) ? GECKO : CURRENCY;
+    });
+    expect(await refreshPrices(['USD'], { fetchImpl: f })).toBe('failed');
+    expect(await db.prices.count()).toBe(0);
   });
 
   it('times out slow requests', async () => {

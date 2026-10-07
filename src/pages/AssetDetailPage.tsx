@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { AmountInput, Button, Card, ConfirmDialog, EmptyState, Field, inputClass, Modal, SegmentedTabs, useBusy } from '../components/ui';
 import { db } from '../db/db';
 import { addTrade, deleteAsset, deleteTrade, RepoError, setManualPrice, updateAsset, updateTrade } from '../db/repo';
-import { formatAmountInput, formatPercent, formatQuantity, formatSignedTRY, formatTRY, parseQuantity, parseTRY } from '../domain/money';
+import { formatAmountInput, formatPercent, formatQuantity, formatSignedMoney, formatMoney, parseQuantity, parseMoney } from '../domain/money';
 import { formatDate, todayLocal } from '../domain/month';
 import { computePosition, sortTrades, valuePosition } from '../domain/portfolio';
 import { AUTO_SYMBOL_MAP, KIND_EMOJI, KIND_LABELS } from '../domain/prices';
@@ -27,14 +27,14 @@ function TradeForm({ asset, trade, suggestedPrice, onClose }: { asset: Asset; tr
   const [busy, run] = useBusy();
   const unit = AUTO_SYMBOL_MAP.get(asset.symbol)?.unit ?? 'adet';
   const q = parseQuantity(qty);
-  const p = parseTRY(price);
+  const p = parseMoney(price);
   const total = q !== null && p !== null ? q * p : null;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (q === null || q <= 0) return setError('Geçerli bir miktar girin');
     if (p === null) return setError('Geçerli bir birim fiyat girin');
-    const feeKurus = fee.trim() ? parseTRY(fee) : 0;
+    const feeKurus = fee.trim() ? parseMoney(fee) : 0;
     if (feeKurus === null) return setError('Geçerli bir komisyon girin');
     const input = { assetId: asset.id, side, quantity: q, unitPriceKurus: p, feeKurus, date, note };
     void run(async () => {
@@ -76,7 +76,7 @@ function TradeForm({ asset, trade, suggestedPrice, onClose }: { asset: Asset; tr
         <Field label="Not (isteğe bağlı)">{(id) => <input id={id} className={inputClass} value={note} onChange={(e) => setNote(e.target.value)} maxLength={120} />}</Field>
         {total !== null && (
           <p className="mb-3 text-sm text-muted" data-testid="trade-total">
-            Toplam: <strong className="text-text tabular">{formatTRY(total)}</strong>
+            Toplam: <strong className="text-text tabular">{formatMoney(total)}</strong>
           </p>
         )}
         {error && (
@@ -102,7 +102,7 @@ function ManualPriceForm({ asset, onClose }: { asset: Asset; onClose: () => void
         noValidate
         onSubmit={async (e) => {
           e.preventDefault();
-          const k = parseTRY(price);
+          const k = parseMoney(price);
           if (k === null) return setError('Geçerli bir fiyat girin');
           await setManualPrice(asset.id, k);
           toast('Fiyat güncellendi');
@@ -169,12 +169,12 @@ export function AssetDetailPage({ id }: { id: string }) {
           </div>
         </div>
         <div className="mt-4 text-3xl font-bold tracking-tight" data-testid="asset-value">
-          {val.valueKurus !== null ? formatTRY(val.valueKurus) : '—'}
+          {val.valueKurus !== null ? formatMoney(val.valueKurus) : '—'}
         </div>
         <div className="text-sm font-semibold" data-testid="asset-pnl">
           {val.unrealizedKurus !== null && position.quantity > 0 ? (
             <span className={val.unrealizedKurus >= 0 ? 'text-income' : 'text-expense'}>
-              {formatSignedTRY(val.unrealizedKurus)}
+              {formatSignedMoney(val.unrealizedKurus)}
               {val.unrealizedPct !== null && ` (${val.unrealizedPct >= 0 ? '+' : ''}${formatPercent(val.unrealizedPct)})`}
             </span>
           ) : (
@@ -190,18 +190,18 @@ export function AssetDetailPage({ id }: { id: string }) {
           </div>
           <div>
             <dt className="text-xs text-muted">Ortalama maliyet</dt>
-            <dd className="font-semibold tabular">{position.quantity > 0 ? formatTRY(position.avgCostKurus) : '—'}</dd>
+            <dd className="font-semibold tabular">{position.quantity > 0 ? formatMoney(position.avgCostKurus) : '—'}</dd>
           </div>
           <div>
             <dt className="text-xs text-muted">Güncel fiyat</dt>
             <dd className="font-semibold tabular" data-testid="asset-price">
-              {price !== null ? formatTRY(price) : '—'}
+              {price !== null ? formatMoney(price) : '—'}
             </dd>
           </div>
           <div>
             <dt className="text-xs text-muted">Gerçekleşen K/Z</dt>
             <dd className={`font-semibold tabular ${position.realizedKurus >= 0 ? 'text-income' : 'text-expense'}`} data-testid="asset-realized">
-              {formatSignedTRY(position.realizedKurus)}
+              {formatSignedMoney(position.realizedKurus)}
             </dd>
           </div>
         </dl>
@@ -263,15 +263,15 @@ export function AssetDetailPage({ id }: { id: string }) {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block font-medium tabular">
-                        {formatQuantity(t.quantity)} {unit} × {formatTRY(t.unitPriceKurus)}
+                        {formatQuantity(t.quantity)} {unit} × {formatMoney(t.unitPriceKurus)}
                       </span>
                       <span className="block truncate text-xs text-muted">
                         {formatDate(t.date)}
-                        {t.feeKurus ? ` · komisyon ${formatTRY(t.feeKurus)}` : ''}
+                        {t.feeKurus ? ` · komisyon ${formatMoney(t.feeKurus)}` : ''}
                         {t.note ? ` · ${t.note}` : ''}
                       </span>
                     </span>
-                    <span className="tabular font-semibold">{formatTRY(t.quantity * t.unitPriceKurus)}</span>
+                    <span className="tabular font-semibold">{formatMoney(t.quantity * t.unitPriceKurus)}</span>
                   </button>
                   <Button variant="ghost" className="px-2! text-sm text-muted" aria-label="İşlemi sil" onClick={() => setDeletingTrade(t)}>
                     Sil

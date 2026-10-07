@@ -5,7 +5,7 @@ import { Badge, Button, Card, ConfirmDialog, EmptyState } from '../components/ui
 import { db } from '../db/db';
 import { deleteAccount, deleteTransfer, RepoError, setAccountArchived } from '../db/repo';
 import { ACCOUNT_TYPE_EMOJI, ACCOUNT_TYPE_LABELS, accountMovements, accountView, openingToInput } from '../domain/accounts';
-import { formatSignedTRY, formatTRY } from '../domain/money';
+import { formatSignedMoney, formatMoney } from '../domain/money';
 import { dayHeading, formatDate } from '../domain/month';
 import type { Transfer } from '../domain/types';
 import { useAccountMap, useAccounts, useAccountTransactions, useCategoryMap, useTransfers } from '../hooks/data';
@@ -68,22 +68,22 @@ export function AccountDetailPage({ id }: { id: string }) {
         <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
           <div>
             <dt className="text-xs text-muted">Bu ay giren</dt>
-            <dd className="font-semibold text-income tabular">+{formatTRY(view.monthIn)}</dd>
+            <dd className="font-semibold text-income tabular">+{formatMoney(view.monthIn)}</dd>
           </div>
           <div>
             <dt className="text-xs text-muted">Bu ay çıkan</dt>
-            <dd className="font-semibold text-expense tabular">−{formatTRY(view.monthOut)}</dd>
+            <dd className="font-semibold text-expense tabular">−{formatMoney(view.monthOut)}</dd>
           </div>
           {credit && account.creditLimitKurus !== undefined && (
             <div>
               <dt className="text-xs text-muted">Limit</dt>
-              <dd className="font-semibold tabular">{formatTRY(account.creditLimitKurus)}</dd>
+              <dd className="font-semibold tabular">{formatMoney(account.creditLimitKurus)}</dd>
             </div>
           )}
           <div>
             <dt className="text-xs text-muted">{credit ? 'Başlangıç borcu' : 'Başlangıç bakiyesi'}</dt>
             <dd className="font-semibold tabular">
-              {formatTRY(openingToInput(account))} <span className="text-xs font-normal text-muted">({formatDate(account.openingDate)})</span>
+              {formatMoney(openingToInput(account))} <span className="text-xs font-normal text-muted">({formatDate(account.openingDate)})</span>
             </dd>
           </div>
         </dl>
@@ -126,7 +126,7 @@ export function AccountDetailPage({ id }: { id: string }) {
                           {beforeOpening ? ' · bakiye tarihinden önce (bakiyeye dahil değil)' : ''}
                         </span>
                       </span>
-                      <span className={`tabular font-semibold ${m.delta > 0 ? 'text-income' : 'text-expense'}`}>{formatSignedTRY(m.delta)}</span>
+                      <span className={`tabular font-semibold ${m.delta > 0 ? 'text-income' : 'text-expense'}`}>{formatSignedMoney(m.delta)}</span>
                     </button>
                   </li>
                 );
@@ -149,7 +149,7 @@ export function AccountDetailPage({ id }: { id: string }) {
                           {beforeOpening ? ' · bakiye tarihinden önce' : ''}
                         </span>
                       </span>
-                      <span className={`tabular font-semibold ${m.delta > 0 ? 'text-income' : 'text-expense'}`}>{formatSignedTRY(m.delta)}</span>
+                      <span className={`tabular font-semibold ${m.delta > 0 ? 'text-income' : 'text-expense'}`}>{formatSignedMoney(m.delta)}</span>
                     </button>
                     <Button variant="ghost" className="px-2! text-sm text-muted" aria-label="Aktarımı sil" onClick={() => setDeletingTransfer(m.transfer)}>
                       Sil

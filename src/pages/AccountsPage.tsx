@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { AmountInput, Badge, Button, Card, EmptyState, Field, inputClass, Modal, SegmentedTabs, useBusy } from '../components/ui';
 import { addAccount, addTransfer, RepoError, updateAccount, updateTransfer } from '../db/repo';
 import { ACCOUNT_TYPE_EMOJI, ACCOUNT_TYPE_LABELS, accountsSummary, openingFromInput, openingToInput, type AccountView } from '../domain/accounts';
-import { formatAmountInput, formatPercent, formatTRY, parseTRY } from '../domain/money';
+import { formatAmountInput, formatPercent, formatMoney, parseMoney } from '../domain/money';
 import { todayLocal } from '../domain/month';
 import type { Account, AccountType, Transfer } from '../domain/types';
 import { useAccounts, useAccountTransactions, useTransfers } from '../hooks/data';
@@ -14,7 +14,7 @@ import { hrefFor } from '../state/useHashRoute';
 function parseSigned(input: string): number | null {
   const t = input.trim();
   const neg = t.startsWith('-') || t.startsWith('−');
-  const v = parseTRY(neg ? t.slice(1) : t);
+  const v = parseMoney(neg ? t.slice(1) : t);
   return v === null ? null : neg ? -v : v;
 }
 
@@ -32,9 +32,9 @@ export function AccountForm({ account, onClose }: { account?: Account; onClose: 
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const entered = amount.trim() === '' ? 0 : credit ? parseTRY(amount) : parseSigned(amount);
+    const entered = amount.trim() === '' ? 0 : credit ? parseMoney(amount) : parseSigned(amount);
     if (entered === null) return setError(credit ? 'Geçerli bir borç tutarı girin' : 'Geçerli bir bakiye girin');
-    const limitKurus = limit.trim() ? parseTRY(limit) : undefined;
+    const limitKurus = limit.trim() ? parseMoney(limit) : undefined;
     if (limitKurus === null) return setError('Geçerli bir limit girin');
     const input = {
       name: name.trim() || ACCOUNT_TYPE_LABELS[type],
@@ -124,7 +124,7 @@ export function TransferForm({ accounts, transfer, preset, onClose }: { accounts
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const k = parseTRY(amount);
+    const k = parseMoney(amount);
     if (k === null || k <= 0) return setError('Geçerli bir tutar girin');
     const input = { fromAccountId: from, toAccountId: to, amountKurus: k, date, note };
     void run(async () => {
@@ -183,15 +183,15 @@ export function AccountBalance({ v }: { v: AccountView }) {
     return (
       <span className="text-right">
         <span className={`block font-bold tabular ${v.debt > 0 ? 'text-expense' : ''}`} data-testid="account-balance">
-          {v.debt > 0 ? `${formatTRY(v.debt)} borç` : v.balance > 0 ? `${formatTRY(v.balance)} artı` : 'Borç yok'}
+          {v.debt > 0 ? `${formatMoney(v.debt)} borç` : v.balance > 0 ? `${formatMoney(v.balance)} artı` : 'Borç yok'}
         </span>
-        {v.available !== null && <span className="block text-xs text-muted tabular">kullanılabilir {formatTRY(v.available)}</span>}
+        {v.available !== null && <span className="block text-xs text-muted tabular">kullanılabilir {formatMoney(v.available)}</span>}
       </span>
     );
   }
   return (
     <span className={`font-bold tabular ${v.balance < 0 ? 'text-expense' : ''}`} data-testid="account-balance">
-      {formatTRY(v.balance)}
+      {formatMoney(v.balance)}
     </span>
   );
 }
@@ -214,19 +214,19 @@ export function AccountsPage() {
         <Card>
           <div className="text-xs font-medium text-muted">Hesaplardaki net para</div>
           <div className={`mt-1 text-3xl font-bold tracking-tight ${s.net < 0 ? 'text-expense' : ''}`} data-testid="accounts-net">
-            {formatTRY(s.net)}
+            {formatMoney(s.net)}
           </div>
           <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
             <div>
               <dt className="text-xs text-muted">Nakit + banka</dt>
               <dd className="font-semibold tabular" data-testid="accounts-liquid">
-                {formatTRY(s.liquid)}
+                {formatMoney(s.liquid)}
               </dd>
             </div>
             <div>
               <dt className="text-xs text-muted">Kredi kartı borcu</dt>
               <dd className={`font-semibold tabular ${s.creditDebt > 0 ? 'text-expense' : ''}`} data-testid="accounts-debt">
-                {formatTRY(s.creditDebt)}
+                {formatMoney(s.creditDebt)}
               </dd>
             </div>
           </dl>
@@ -284,7 +284,7 @@ export function AccountsPage() {
               )}
               {(v.monthIn > 0 || v.monthOut > 0) && (
                 <div className="mt-2 text-xs text-muted tabular">
-                  Bu ay: <span className="text-income">+{formatTRY(v.monthIn)}</span> · <span className="text-expense">−{formatTRY(v.monthOut)}</span>
+                  Bu ay: <span className="text-income">+{formatMoney(v.monthIn)}</span> · <span className="text-expense">−{formatMoney(v.monthOut)}</span>
                 </div>
               )}
             </a>

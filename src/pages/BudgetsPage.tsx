@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { BudgetBar } from '../components/BudgetBar';
 import { AmountInput, Button, Card, EmptyState, Field, Modal, useBusy } from '../components/ui';
 import { budgetRows, budgetStatus, resolveBudget } from '../domain/budget';
-import { formatAmountInput, formatPercent, formatTRY, parseTRY } from '../domain/money';
+import { formatAmountInput, formatPercent, formatMoney, parseMoney } from '../domain/money';
 import { monthLabel } from '../domain/month';
 import type { Category } from '../domain/types';
 import { setBudget } from '../db/repo';
@@ -30,7 +30,7 @@ function BudgetModal({ category, current, onClose }: { category: Category | null
         noValidate
         onSubmit={(e) => {
           e.preventDefault();
-          const k = parseTRY(amount);
+          const k = parseMoney(amount);
           if (k === null || k <= 0) return setError('Geçerli bir tutar girin');
           save(k);
         }}
@@ -78,10 +78,10 @@ export function BudgetsPage() {
         <Card>
           <div className="text-xs font-medium text-muted">Toplam bütçe · {monthLabel(month)}</div>
           <div className="mt-1 text-2xl font-bold tabular">
-            {formatTRY(data.spent)} <span className="text-base font-medium text-muted">/ {formatTRY(data.limit)}</span>
+            {formatMoney(data.spent)} <span className="text-base font-medium text-muted">/ {formatMoney(data.limit)}</span>
           </div>
           <div className="mt-1 text-sm text-muted">
-            {data.total.remaining >= 0 ? `${formatTRY(data.total.remaining)} kaldı` : `${formatTRY(-data.total.remaining)} aşıldı`} · {formatPercent(data.total.ratio * 100, 0)} kullanıldı
+            {data.total.remaining >= 0 ? `${formatMoney(data.total.remaining)} kaldı` : `${formatMoney(-data.total.remaining)} aşıldı`} · {formatPercent(data.total.ratio * 100, 0)} kullanıldı
           </div>
         </Card>
       )}

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_CURRENCY, getActiveCurrency, setActiveCurrency } from '../domain/currency';
+import { getCurrencySetting, setCurrencyPref } from '../state/currency';
 import { seedIfNeeded } from './bootstrap';
 import { clearAllTables, db, getMeta } from './db';
 import { addRecurring, addTransaction, deleteTransaction, updateTransaction } from './repo';
@@ -111,5 +113,73 @@ describe('import / export', () => {
     await replaceFromSyncText(empty, NOW);
     expect(await db.transactions.count()).toBe(0);
     expect(await getMeta('lastSyncImportFrom')).toBe('Mac');
+  });
+});
+
+describe('currency sync', () => {
+  /** Başka bir cihaza geçişi simüle eder: veritabanı ve tercihler boş. */
+  async function freshDevice() {
+    await clearAllTables();
+    localStorage.clear();
+    setActiveCurrency(DEFAULT_CURRENCY);
+    await seedIfNeeded();
+  }
+
+  it('marks the change as unsaved', async () => {
+    await seedIfNeeded();
+    await setCurrencyPref('EUR', 500);
+    expect(getActiveCurrency()).toBe('EUR');
+    expect(getCurrencySetting()).toEqual({ currency: 'EUR', updatedAt: 500 });
+    expect(await getMeta('dirtySince')).toBe(500);
+  });
+
+  it('carries the currency to the other device', async () => {
+    await seedIfNeeded();
+    await setCurrencyPref('EUR', 500);
+    const phoneFile = serializeDataset(await readDataset(), 'iPhone', 600);
+
+    await freshDevice();
+    const r = await importSyncText(phoneFile, NOW);
+    expect(r).toMatchObject({ ok: true, currencyChanged: 'EUR', needsExport: false });
+    expect(getActiveCurrency()).toBe('EUR');
+    expect(getCurrencySetting()).toEqual({ currency: 'EUR', updatedAt: 500 });
+    expect(await getMeta('dirtySince')).toBeUndefined();
+
+    // Aynı dosyayı tekrar eşitlemek bir şey değiştirmez.
+    expect(await importSyncText(phoneFile, NOW)).toMatchObject({ ok: true, currencyChanged: undefined, needsExport: false });
+  });
+
+  it('keeps the newer local choice and asks to save it', async () => {
+    await seedIfNeeded();
+    await setCurrencyPref('EUR', 500);
+    const phoneFile = serializeDataset(await readDataset(), 'iPhone', 600);
+
+    await freshDevice();
+    await setCurrencyPref('USD', 900);
+    await markExported(901);
+    const r = await importSyncText(phoneFile, NOW);
+    expect(r).toMatchObject({ ok: true, currencyChanged: undefined, needsExport: true });
+    expect(getActiveCurrency()).toBe('USD');
+    expect(await getMeta('dirtySince')).toBeTypeOf('number');
+  });
+
+  it('ignores files from older versions without settings', async () => {
+    await seedIfNeeded();
+    const file = JSON.parse(serializeDataset(await readDataset(), 'Mac', 1)) as Record<string, unknown>;
+    delete file.settings;
+    await setCurrencyPref('GBP', 700);
+    await markExported(701);
+    const r = await importSyncText(JSON.stringify(file), NOW);
+    expect(r).toMatchObject({ ok: true, needsExport: true });
+    expect(getActiveCurrency()).toBe('GBP');
+  });
+
+  it('full restore applies the file currency', async () => {
+    await seedIfNeeded();
+    const tryFile = serializeDataset(await readDataset(), 'Mac', 1);
+    await setCurrencyPref('CHF', 800);
+    await replaceFromSyncText(tryFile, NOW);
+    expect(getActiveCurrency()).toBe('TRY');
+    expect(getCurrencySetting()).toEqual({ currency: 'TRY', updatedAt: 0 });
   });
 });

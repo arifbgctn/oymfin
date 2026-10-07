@@ -7,7 +7,7 @@ import { TransactionList } from '../components/TransactionList';
 import { Badge, Card, EmptyState } from '../components/ui';
 import { ACCOUNT_TYPE_EMOJI, accountsSummary } from '../domain/accounts';
 import { budgetRows } from '../domain/budget';
-import { formatPercent, formatSignedTRY, formatTRY } from '../domain/money';
+import { formatPercent, formatSignedMoney, formatMoney } from '../domain/money';
 import { addMonths, currentMonth } from '../domain/month';
 import { portfolioSummary } from '../domain/portfolio';
 import { categoryBreakdown, sortTransactions, summaryWithChange, trend } from '../domain/summary';
@@ -54,13 +54,13 @@ function AccountsCard() {
         <div>
           <div className="text-xs font-medium text-muted">Hesaplardaki net para</div>
           <div className={`mt-1 text-2xl font-bold tracking-tight ${s.net < 0 ? 'text-expense' : ''}`} data-testid="accounts-card-net">
-            {formatTRY(s.net)}
+            {formatMoney(s.net)}
           </div>
         </div>
         {s.creditDebt > 0 && (
           <div className="text-right text-xs text-muted">
             Kart borcu
-            <div className="text-sm font-semibold text-expense tabular">{formatTRY(s.creditDebt)}</div>
+            <div className="text-sm font-semibold text-expense tabular">{formatMoney(s.creditDebt)}</div>
           </div>
         )}
       </div>
@@ -70,7 +70,7 @@ function AccountsCard() {
             <span aria-hidden>{ACCOUNT_TYPE_EMOJI[v.account.type]}</span>
             <span className="min-w-0 flex-1 truncate text-muted">{v.account.name}</span>
             <span className={`tabular font-medium ${v.debt > 0 || v.balance < 0 ? 'text-expense' : ''}`}>
-              {v.account.type === 'credit' ? (v.debt > 0 ? `${formatTRY(v.debt)} borç` : 'Borç yok') : formatTRY(v.balance)}
+              {v.account.type === 'credit' ? (v.debt > 0 ? `${formatMoney(v.debt)} borç` : 'Borç yok') : formatMoney(v.balance)}
             </span>
           </li>
         ))}
@@ -106,13 +106,13 @@ function WealthCard() {
         <div>
           <div className="text-xs font-medium text-muted">Toplam Servet (yatırımlar)</div>
           <div className="mt-1 text-2xl font-bold tracking-tight" data-testid="wealth-value">
-            {formatTRY(s.totalValueKurus)}
+            {formatMoney(s.totalValueKurus)}
           </div>
         </div>
         {s.missingPrices > 0 && <Badge tone="warn">{s.missingPrices} varlığın fiyatı yok</Badge>}
       </div>
       <div className={`mt-1 text-sm font-semibold ${up ? 'text-income' : 'text-expense'}`}>
-        {formatSignedTRY(s.unrealizedKurus)}
+        {formatSignedMoney(s.unrealizedKurus)}
         {s.unrealizedPct !== null && ` (${s.unrealizedPct >= 0 ? '+' : ''}${formatPercent(s.unrealizedPct)})`}
         <span className="font-normal text-muted"> kâr/zarar</span>
       </div>
@@ -170,7 +170,7 @@ export function DashboardPage() {
               <DonutChart
                 slices={data.breakdown}
                 centerLabel="Toplam gider"
-                centerValue={formatTRY(data.summary.current.expense)}
+                centerValue={formatMoney(data.summary.current.expense)}
                 ariaLabel="Kategorilere göre gider dağılımı"
               />
             ) : (

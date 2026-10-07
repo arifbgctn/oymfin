@@ -6,10 +6,12 @@ import { setMeta } from '../db/db';
 import { isPersisted, requestPersist } from '../db/persist';
 import { importSyncText, markExported, readDataset, replaceFromSyncText, serializeDataset, syncFileName } from '../db/syncIO';
 import { db } from '../db/db';
+import { CURRENCIES, currencyInfo, isCurrencyCode } from '../domain/currency';
 import { formatDateTimeShort } from '../domain/month';
 import { SYNC_TABLES } from '../domain/types';
 import { useMeta } from '../hooks/data';
 import { useApp } from '../state/AppContext';
+import { useCurrency } from '../state/currency';
 import { useTheme, type ThemePref } from '../state/theme';
 import { hrefFor } from '../state/useHashRoute';
 import { prefersShareSheet, readFileText, saveFile } from '../sync/share';
@@ -57,7 +59,8 @@ function SyncCard() {
       if (!r.ok) return toast(r.error, 'error');
       const { added, updated, deleted } = r.stats;
       const summary = added + updated + deleted === 0 ? 'Zaten güncel' : `${added} yeni, ${updated} güncellendi, ${deleted} silindi`;
-      toast(`${r.deviceName} ile eşitlendi: ${summary}${r.needsExport ? '. Diğer cihaz için tekrar kaydedin.' : ''}`);
+      const currency = r.currencyChanged ? `. Para birimi: ${currencyInfo(r.currencyChanged).label}` : '';
+      toast(`${r.deviceName} ile eşitlendi: ${summary}${currency}${r.needsExport ? '. Diğer cihaz için tekrar kaydedin.' : ''}`);
     } catch {
       toast('Dosya okunamadı', 'error');
     } finally {
@@ -173,6 +176,40 @@ function StorageStatus() {
   );
 }
 
+function CurrencyField() {
+  const { toast } = useApp();
+  const [currency, setCurrency] = useCurrency();
+  return (
+    <div className="text-sm">
+      <label htmlFor="currency" className="mb-1 block text-muted">
+        Para birimi
+      </label>
+      <select
+        id="currency"
+        aria-describedby="currency-help"
+        className={inputClass}
+        value={currency}
+        onChange={async (e) => {
+          const code = e.target.value;
+          if (!isCurrencyCode(code)) return;
+          await setCurrency(code);
+          const c = currencyInfo(code);
+          toast(`Para birimi: ${c.label} (${c.symbol})`);
+        }}
+      >
+        {CURRENCIES.map((c) => (
+          <option key={c.code} value={c.code}>
+            {c.symbol} · {c.label} ({c.code})
+          </option>
+        ))}
+      </select>
+      <p id="currency-help" className="mt-1 text-xs text-muted">
+        Tutarlar bu birimle gösterilir ve yatırım fiyatları bu birimde alınır. Mevcut kayıtlar dönüştürülmez.
+      </p>
+    </div>
+  );
+}
+
 export function SettingsPage() {
   const [theme, setTheme] = useTheme();
   return (
@@ -189,6 +226,9 @@ export function SettingsPage() {
             { value: 'dark', label: 'Koyu' },
           ]}
         />
+      </Card>
+      <Card title="Para birimi">
+        <CurrencyField />
       </Card>
       <Card title="Cihaz ve veriler">
         <div className="space-y-3">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { formatCompactTRY, formatTRY } from '../domain/money';
+import { formatCompactMoney, formatMoney } from '../domain/money';
 import { monthLabel, shortMonthLabel } from '../domain/month';
 import type { MonthKey } from '../domain/types';
 import { topRoundedBar } from './charts';
@@ -12,7 +12,7 @@ export interface LineSeries {
   dashed?: boolean;
 }
 
-const fmt = (v: number | null | undefined) => (v === null || v === undefined ? '—' : formatTRY(v));
+const fmt = (v: number | null | undefined) => (v === null || v === undefined ? '—' : formatMoney(v));
 
 /**
  * Çizgi grafik: tek eksen, sıfır çizgisi, 2px çizgiler, üzerine gelince dikey imleç + ipucu.
@@ -58,8 +58,8 @@ export function LineChart({ series, xLabels, tooltipTitle, ariaLabel, labelEvery
             </span>
           ))}
         <span className="ml-auto tabular">
-          {min < 0 ? `${formatCompactTRY(min)} … ` : ''}
-          {formatCompactTRY(max)}
+          {min < 0 ? `${formatCompactMoney(min)} … ` : ''}
+          {formatCompactMoney(max)}
         </span>
       </div>
       <div className="relative">
@@ -184,7 +184,7 @@ export function MonthBars({ points, color, average, ariaLabel }: { points: { mon
                 height={H}
                 fill="transparent"
                 tabIndex={0}
-                aria-label={`${monthLabel(p.month)}: ${formatTRY(p.value)}`}
+                aria-label={`${monthLabel(p.month)}: ${formatMoney(p.value)}`}
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}
                 onFocus={() => setHover(i)}
@@ -197,7 +197,7 @@ export function MonthBars({ points, color, average, ariaLabel }: { points: { mon
           <g pointerEvents="none">
             <line x1="0" x2={W} y1={base - scale(average)} y2={base - scale(average)} stroke="var(--text)" strokeOpacity="0.6" strokeDasharray="4 3" />
             <text x={W - 2} y={base - scale(average) - 4} textAnchor="end" fontSize="10" fill="var(--muted)">
-              ort. {formatCompactTRY(average)}
+              ort. {formatCompactMoney(average)}
             </text>
           </g>
         )}
@@ -209,7 +209,7 @@ export function MonthBars({ points, color, average, ariaLabel }: { points: { mon
           className="pointer-events-none absolute top-0 z-10 whitespace-nowrap rounded-xl border border-border bg-surface px-2.5 py-1.5 text-xs shadow-lg"
           style={{ left: `clamp(0px, calc(${((hover + 0.5) / points.length) * 100}% - 4.5rem), calc(100% - 9rem))` }}
         >
-          <span className="font-semibold">{monthLabel(h.month)}</span> · <span className="tabular">{formatTRY(h.value)}</span>
+          <span className="font-semibold">{monthLabel(h.month)}</span> · <span className="tabular">{formatMoney(h.value)}</span>
         </div>
       )}
     </div>

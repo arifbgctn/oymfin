@@ -1,6 +1,6 @@
 import { AlertTriangle, CheckCircle2, OctagonAlert } from 'lucide-react';
 import type { BudgetRow } from '../domain/budget';
-import { formatPercent, formatTRY } from '../domain/money';
+import { formatPercent, formatMoney } from '../domain/money';
 
 const STYLE = {
   ok: { bar: 'bg-[#0ca30c]', text: 'text-income', label: 'Yolunda', Icon: CheckCircle2 },
@@ -33,10 +33,10 @@ export function BudgetBar({ row, onClick }: { row: BudgetRow; onClick?: () => vo
       </div>
       <div className="mt-1.5 flex justify-between text-xs text-muted tabular">
         <span>
-          {formatTRY(row.spent)} / {formatTRY(row.limit)}
+          {formatMoney(row.spent)} / {formatMoney(row.limit)}
         </span>
         <span className={row.remaining < 0 ? 'font-semibold text-expense' : ''}>
-          {row.remaining < 0 ? `${formatTRY(-row.remaining)} fazla` : `${formatTRY(row.remaining)} kaldı`} · {formatPercent(row.ratio * 100, 0)}
+          {row.remaining < 0 ? `${formatMoney(-row.remaining)} fazla` : `${formatMoney(row.remaining)} kaldı`} · {formatPercent(row.ratio * 100, 0)}
         </span>
       </div>
     </button>

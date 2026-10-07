@@ -3,10 +3,14 @@ import type { AssetKind } from './types';
 export const TROY_OUNCE_GRAMS = 31.1034768;
 export const PRICE_MAX_AGE_MS = 15 * 60 * 1000;
 
-export const CURRENCY_API_URLS = [
-  'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/try.json',
-  'https://latest.currency-api.pages.dev/v1/currencies/try.json',
-];
+/** Seçili birim bazlı kur listesi adresleri (asıl + yedek). `base`: küçük harfli kod (try, usd…) */
+export function currencyApiUrls(base: string): string[] {
+  return [
+    `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${base}.json`,
+    `https://latest.currency-api.pages.dev/v1/currencies/${base}.json`,
+  ];
+}
+export const CURRENCY_API_URLS = currencyApiUrls('try');
 export const COINGECKO_URL = 'https://api.coingecko.com/api/v3/simple/price';
 export const PRICE_HOSTS = ['cdn.jsdelivr.net', 'latest.currency-api.pages.dev', 'api.coingecko.com'];
 
@@ -15,7 +19,7 @@ export interface AutoSymbol {
   kind: AssetKind;
   label: string;
   unit: string;
-  /** currency-api anahtarı (1 TRY = rates[key] birim) */
+  /** currency-api anahtarı (1 birim ana para = rates[key] birim) */
   currencyApiKey: string;
   /** Birim başına bölen (ons → gram için 31,10…) */
   divisor?: number;
@@ -82,10 +86,10 @@ export function kindSupportsAuto(kind: AssetKind): boolean {
 
 const validRate = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x) && x > 0;
 
-/** currency-api yanıtı → sembol başına kuruş fiyat. */
-export function parseCurrencyApi(json: unknown, symbols: AutoSymbol[] = AUTO_SYMBOLS): Map<string, number> {
+/** currency-api yanıtı → sembol başına kuruş (ana paranın 1/100'ü) fiyat. */
+export function parseCurrencyApi(json: unknown, symbols: AutoSymbol[] = AUTO_SYMBOLS, base = 'try'): Map<string, number> {
   const out = new Map<string, number>();
-  const rates = (json as { try?: Record<string, unknown> } | null)?.try;
+  const rates = (json as Record<string, unknown> | null)?.[base] as Record<string, unknown> | undefined;
   if (!rates || typeof rates !== 'object') return out;
   for (const s of symbols) {
     const r = rates[s.currencyApiKey];
@@ -97,13 +101,13 @@ export function parseCurrencyApi(json: unknown, symbols: AutoSymbol[] = AUTO_SYM
 }
 
 /** CoinGecko simple/price yanıtı → sembol başına kuruş fiyat. */
-export function parseCoinGecko(json: unknown, symbols: AutoSymbol[] = AUTO_SYMBOLS): Map<string, number> {
+export function parseCoinGecko(json: unknown, symbols: AutoSymbol[] = AUTO_SYMBOLS, vs = 'try'): Map<string, number> {
   const out = new Map<string, number>();
   if (!json || typeof json !== 'object') return out;
-  const data = json as Record<string, { try?: unknown } | undefined>;
+  const data = json as Record<string, Record<string, unknown> | undefined>;
   for (const s of symbols) {
     if (!s.coingeckoId) continue;
-    const p = data[s.coingeckoId]?.try;
+    const p = data[s.coingeckoId]?.[vs];
     if (!validRate(p)) continue;
     out.set(s.symbol, Math.round(p * 100));
   }

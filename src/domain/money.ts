@@ -1,7 +1,10 @@
-// Türk lirası biçimlendirme ve ayrıştırma. Intl kullanılmaz: Safari ve Node ICU çıktıları farklı olabiliyor.
+// Tutar biçimlendirme ve ayrıştırma (Türkçe sayı biçimi, seçili para birimi simgesi).
+// Intl kullanılmaz: Safari ve Node ICU çıktıları farklı olabiliyor.
+
+import { activeCurrencyInfo } from './currency';
 
 const NBSP = ' ';
-export const MAX_KURUS = 99_999_999_999; // 999.999.999,99 ₺
+export const MAX_KURUS = 99_999_999_999; // 999.999.999,99
 
 function groupThousands(digits: string): string {
   return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -15,8 +18,8 @@ function groupThousands(digits: string): string {
 export function parseScaledTR(input: string, maxFrac: number, maxIntDigits: number): number | null {
   const s = input
     .trim()
-    .replace(/₺/g, '')
-    .replace(/tl/gi, '')
+    .replace(/[₺$€£]/g, '')
+    .replace(/tl|try|usd|eur|gbp|chf/gi, '')
     .replace(/[\s  ]/g, '');
   if (s === '' || !/^[0-9.,]+$/.test(s)) return null;
 
@@ -66,7 +69,7 @@ export function parseScaledTR(input: string, maxFrac: number, maxIntDigits: numb
 }
 
 /** "1.234,56" → 123456 kuruş. Geçersizse null. */
-export function parseTRY(input: string): number | null {
+export function parseMoney(input: string): number | null {
   const v = parseScaledTR(input, 2, 9);
   if (v === null || v > MAX_KURUS) return null;
   return v;
@@ -79,15 +82,20 @@ export function parseQuantity(input: string): number | null {
   return v / 1e8;
 }
 
+/** Seçili para biriminin simgesi (₺, $, €…) */
+export function currencySymbol(): string {
+  return activeCurrencyInfo().symbol;
+}
+
 /** 123456 → "1.234,56 ₺" */
-export function formatTRY(kurus: number): string {
-  return `${formatAmountInput(kurus)}${NBSP}₺`;
+export function formatMoney(kurus: number): string {
+  return `${formatAmountInput(kurus)}${NBSP}${currencySymbol()}`;
 }
 
 /** 123456 → "+1.234,56 ₺" (sıfırda işaret yok) */
-export function formatSignedTRY(kurus: number): string {
+export function formatSignedMoney(kurus: number): string {
   const r = Math.round(kurus);
-  return `${r > 0 ? '+' : ''}${formatTRY(r)}`;
+  return `${r > 0 ? '+' : ''}${formatMoney(r)}`;
 }
 
 /** 123456 → "1.234,56" (form alanı için) */
@@ -101,13 +109,14 @@ export function formatAmountInput(kurus: number): string {
 }
 
 /** Grafik ekseni için kısa biçim: 1250000 → "12,5 B ₺" */
-export function formatCompactTRY(kurus: number): string {
-  const tl = kurus / 100;
-  const abs = Math.abs(tl);
+export function formatCompactMoney(kurus: number): string {
+  const units = kurus / 100;
+  const abs = Math.abs(units);
+  const sym = currencySymbol();
   const fmt = (n: number) => n.toFixed(1).replace(/\.0$/, '').replace('.', ',');
-  if (abs >= 1_000_000) return `${fmt(tl / 1_000_000)}${NBSP}Mn${NBSP}₺`;
-  if (abs >= 1_000) return `${fmt(tl / 1_000)}${NBSP}B${NBSP}₺`;
-  return `${Math.round(tl)}${NBSP}₺`;
+  if (abs >= 1_000_000) return `${fmt(units / 1_000_000)}${NBSP}Mn${NBSP}${sym}`;
+  if (abs >= 1_000) return `${fmt(units / 1_000)}${NBSP}B${NBSP}${sym}`;
+  return `${Math.round(units)}${NBSP}${sym}`;
 }
 
 /** 12.5 → "%12,5"; -3 → "-%3,0" */

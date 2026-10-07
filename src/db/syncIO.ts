@@ -1,7 +1,9 @@
+import type { CurrencyCode } from '../domain/currency';
 import { mergeDatasets, stableStringify, type MergeStats } from '../domain/merge';
 import { currentMonth } from '../domain/month';
 import { buildSyncFile, parseSyncFile, SCHEMA_VERSION } from '../domain/syncFile';
 import { SYNC_TABLES, type Dataset } from '../domain/types';
+import { applyCurrencySetting, getCurrencySetting } from '../state/currency';
 import { db, getMeta, setMeta } from './db';
 import { runRecurring } from './recurringRunner';
 
@@ -43,7 +45,7 @@ export function syncFileName(deviceName: string, nowTs: number): string {
 }
 
 export function serializeDataset(ds: Dataset, deviceName: string, nowTs: number): string {
-  return JSON.stringify(buildSyncFile(ds, deviceName, nowTs));
+  return JSON.stringify(buildSyncFile(ds, deviceName, nowTs, getCurrencySetting()));
 }
 
 /** Dosya başarıyla kaydedildi/paylaşıldı. */
@@ -55,19 +57,25 @@ export async function markExported(nowTs = Date.now()): Promise<void> {
 }
 
 export type ImportResult =
-  | { ok: true; stats: MergeStats; deviceName: string; exportedAt: number; needsExport: boolean }
+  | { ok: true; stats: MergeStats; deviceName: string; exportedAt: number; needsExport: boolean; currencyChanged?: CurrencyCode }
   | { ok: false; error: string };
 
 /** Senkron dosyasını yerel veriyle birleştirir. Tek transaction: hata olursa hiçbir şey değişmez. */
 export async function importSyncText(text: string, now: Date = new Date()): Promise<ImportResult> {
   const parsed = parseSyncFile(text);
   if (!parsed.ok) return parsed;
+  // Para birimi: hangi cihazda daha sonra seçildiyse o geçerli.
+  const localCurrency = getCurrencySetting();
+  const remoteCurrency = parsed.currency;
+  const takeRemoteCurrency = remoteCurrency !== undefined && remoteCurrency.updatedAt > localCurrency.updatedAt;
+  const localCurrencyAhead = localCurrency.updatedAt > (remoteCurrency?.updatedAt ?? 0);
   const result = await db.transaction('rw', [...syncTables(), db.meta], async () => {
     const local = await readDataset();
     const { dataset, stats } = mergeDatasets(local, parsed.dataset);
     await writeDataset(dataset);
     // Birleşmiş veri karşı dosyadan farklıysa (yerelde karşıya gitmemiş değişiklik var) kaydetmek gerekir.
-    const needsExport = stableStringify(dataset) !== stableStringify(mergeDatasets(parsed.dataset, parsed.dataset).dataset);
+    const needsExport =
+      localCurrencyAhead || stableStringify(dataset) !== stableStringify(mergeDatasets(parsed.dataset, parsed.dataset).dataset);
     if (needsExport) {
       if ((await getMeta<number>('dirtySince')) === undefined) await setMeta('dirtySince', now.getTime());
     } else {
@@ -77,8 +85,10 @@ export async function importSyncText(text: string, now: Date = new Date()): Prom
     await setMeta('lastSyncImportFrom', parsed.deviceName);
     return { stats, needsExport };
   });
+  const currencyChanged = takeRemoteCurrency && remoteCurrency.currency !== localCurrency.currency ? remoteCurrency.currency : undefined;
+  if (takeRemoteCurrency) await applyCurrencySetting(remoteCurrency);
   await runRecurring(currentMonth(now));
-  return { ok: true, ...result, deviceName: parsed.deviceName, exportedAt: parsed.exportedAt };
+  return { ok: true, ...result, deviceName: parsed.deviceName, exportedAt: parsed.exportedAt, currencyChanged };
 }
 
 /** Yedekten tamamen geri yükleme (yerel veri silinir). */
@@ -91,6 +101,7 @@ export async function replaceFromSyncText(text: string, now: Date = new Date()):
     await setMeta('lastSyncImportAt', now.getTime());
     await setMeta('lastSyncImportFrom', parsed.deviceName);
   });
+  if (parsed.currency) await applyCurrencySetting(parsed.currency);
   await runRecurring(currentMonth(now));
   return { ok: true };
 }

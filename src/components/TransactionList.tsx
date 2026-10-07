@@ -1,5 +1,5 @@
 import { Repeat } from 'lucide-react';
-import { formatTRY } from '../domain/money';
+import { formatMoney } from '../domain/money';
 import { dayHeading } from '../domain/month';
 import { groupByDate } from '../domain/summary';
 import { ACCOUNT_TYPE_EMOJI } from '../domain/accounts';
@@ -26,7 +26,7 @@ export function TransactionRow({ tx, category, account, onClick }: { tx: Transac
         </span>
         <span className={`tabular shrink-0 font-semibold ${income ? 'text-income' : 'text-expense'}`}>
           {income ? '+' : '−'}
-          {formatTRY(tx.amountKurus)}
+          {formatMoney(tx.amountKurus)}
         </span>
       </button>
     </li>

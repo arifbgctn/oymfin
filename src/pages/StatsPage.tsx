@@ -3,7 +3,7 @@ import { TrendBars } from '../components/charts';
 import { StatCard } from '../components/SummaryCards';
 import { LineChart, MonthBars, Sparkline } from '../components/statCharts';
 import { Card, EmptyState, SegmentedTabs } from '../components/ui';
-import { formatCompactTRY, formatPercent, formatSignedTRY, formatTRY } from '../domain/money';
+import { formatCompactMoney, formatPercent, formatSignedMoney, formatMoney } from '../domain/money';
 import { addMonths, currentMonth, daysInMonth, monthLabel, shortMonthLabel, todayLocal } from '../domain/month';
 import { chartColor } from '../domain/seed';
 import { categoryTrends, cumulativeDaily, paceComparison, rangeStats, type CategoryTrend } from '../domain/stats';
@@ -51,11 +51,11 @@ function CategoryRow({ t, active, onClick }: { t: CategoryTrend; active: boolean
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium">{name}</span>
-          <span className="block truncate text-xs whitespace-nowrap text-muted tabular">ort. {formatCompactTRY(t.average)}</span>
+          <span className="block truncate text-xs whitespace-nowrap text-muted tabular">ort. {formatCompactMoney(t.average)}</span>
         </span>
         <Sparkline values={t.series} color={chartColor(t.category?.color ?? '#64748b')} label={`${name} aylık eğilim`} />
         <span className="w-24 text-right">
-          <span className="block text-sm font-semibold tabular">{formatTRY(t.current)}</span>
+          <span className="block text-sm font-semibold tabular">{formatMoney(t.current)}</span>
           <ChangeBadge value={t.changeVsAverage} goodWhenUp={false} />
         </span>
       </button>
@@ -123,8 +123,8 @@ export function StatsPage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatCard testId="stat-avg-income" label="Ort. aylık gelir" value={formatTRY(stats.avgIncome)} change={<span className="text-xs text-muted">{stats.activeMonths} ay verisi</span>} />
-            <StatCard testId="stat-avg-expense" label="Ort. aylık gider" value={formatTRY(stats.avgExpense)} change={<span className="text-xs text-muted">toplam {formatTRY(stats.totalExpense)}</span>} />
+            <StatCard testId="stat-avg-income" label="Ort. aylık gelir" value={formatMoney(stats.avgIncome)} change={<span className="text-xs text-muted">{stats.activeMonths} ay verisi</span>} />
+            <StatCard testId="stat-avg-expense" label="Ort. aylık gider" value={formatMoney(stats.avgExpense)} change={<span className="text-xs text-muted">toplam {formatMoney(stats.totalExpense)}</span>} />
             <StatCard
               testId="stat-avg-savings"
               label="Ort. tasarruf oranı"
@@ -134,8 +134,8 @@ export function StatsPage() {
             <StatCard
               testId="stat-total-net"
               label={`${n} ayda birikim`}
-              value={formatSignedTRY(stats.totalNet)}
-              change={<span className="text-xs text-muted">ort. {formatSignedTRY(stats.avgNet)}/ay</span>}
+              value={formatSignedMoney(stats.totalNet)}
+              change={<span className="text-xs text-muted">ort. {formatSignedMoney(stats.avgNet)}/ay</span>}
             />
           </div>
 
@@ -146,7 +146,7 @@ export function StatsPage() {
                 <div className="rounded-xl bg-surface-2 p-2">
                   <dt className="text-muted">En çok harcanan ay</dt>
                   <dd className="font-semibold" data-testid="max-expense-month">
-                    {monthLabel(stats.maxExpenseMonth.month)} · {formatTRY(stats.maxExpenseMonth.expense)}
+                    {monthLabel(stats.maxExpenseMonth.month)} · {formatMoney(stats.maxExpenseMonth.expense)}
                   </dd>
                 </div>
               )}
@@ -154,7 +154,7 @@ export function StatsPage() {
                 <div className="rounded-xl bg-surface-2 p-2">
                   <dt className="text-muted">En az harcanan ay</dt>
                   <dd className="font-semibold">
-                    {monthLabel(stats.minExpenseMonth.month)} · {formatTRY(stats.minExpenseMonth.expense)}
+                    {monthLabel(stats.minExpenseMonth.month)} · {formatMoney(stats.minExpenseMonth.expense)}
                   </dd>
                 </div>
               )}
@@ -171,8 +171,8 @@ export function StatsPage() {
               />
               {stats.bestMonth && stats.worstMonth && (
                 <p className="mt-2 text-xs text-muted">
-                  En iyi ay <strong className="text-text">{monthLabel(stats.bestMonth.month)}</strong> ({formatSignedTRY(stats.bestMonth.net)}), en zayıf ay{' '}
-                  <strong className="text-text">{monthLabel(stats.worstMonth.month)}</strong> ({formatSignedTRY(stats.worstMonth.net)}).
+                  En iyi ay <strong className="text-text">{monthLabel(stats.bestMonth.month)}</strong> ({formatSignedMoney(stats.bestMonth.net)}), en zayıf ay{' '}
+                  <strong className="text-text">{monthLabel(stats.worstMonth.month)}</strong> ({formatSignedMoney(stats.worstMonth.net)}).
                 </p>
               )}
             </Card>
@@ -193,7 +193,7 @@ export function StatsPage() {
                     labelEvery={5}
                   />
                   <p className="mt-2 text-xs text-muted" data-testid="pace-text">
-                    Ayın {data.paceDay}. gününe kadar <strong className="text-text">{formatTRY(data.pace.current)}</strong> harcandı
+                    Ayın {data.paceDay}. gününe kadar <strong className="text-text">{formatMoney(data.pace.current)}</strong> harcandı
                     {data.pace.change === null ? '.' : (
                       <>
                         ; geçen ayın aynı gününe göre{' '}
@@ -249,9 +249,9 @@ export function StatsPage() {
                     {[...stats.months].reverse().map((m) => (
                       <tr key={m.month} className="border-t border-border" data-testid="stats-table-row">
                         <td className="py-1.5 pr-2">{monthLabel(m.month)}</td>
-                        <td className="py-1.5 pr-2 text-right">{formatTRY(m.income)}</td>
-                        <td className="py-1.5 pr-2 text-right">{formatTRY(m.expense)}</td>
-                        <td className={`py-1.5 pr-2 text-right ${m.net < 0 ? 'text-expense' : ''}`}>{formatSignedTRY(m.net)}</td>
+                        <td className="py-1.5 pr-2 text-right">{formatMoney(m.income)}</td>
+                        <td className="py-1.5 pr-2 text-right">{formatMoney(m.expense)}</td>
+                        <td className={`py-1.5 pr-2 text-right ${m.net < 0 ? 'text-expense' : ''}`}>{formatSignedMoney(m.net)}</td>
                         <td className="py-1.5 text-right">{m.savingsRate === null ? '—' : formatPercent(m.savingsRate)}</td>
                       </tr>
                     ))}

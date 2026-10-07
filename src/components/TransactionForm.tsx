@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { addTransaction, deleteTransaction, RepoError, updateTransaction } from '../db/repo';
-import { formatAmountInput, parseTRY } from '../domain/money';
+import { formatAmountInput, parseMoney } from '../domain/money';
 import { defaultDateFor, todayLocal } from '../domain/month';
 import type { Category, Transaction, TxType } from '../domain/types';
 import { useAccounts, useCategories } from '../hooks/data';
@@ -82,7 +82,7 @@ export function TransactionForm() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const amountKurus = parseTRY(s.amount);
+    const amountKurus = parseMoney(s.amount);
     const errs: typeof errors = {};
     if (amountKurus === null || amountKurus <= 0) errs.amount = 'Geçerli bir tutar girin';
     if (!s.categoryId || !options.some((c) => c.id === s.categoryId)) errs.category = 'Kategori seçin';

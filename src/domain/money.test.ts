@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'vitest';
+import { setActiveCurrency } from './currency';
 import {
   formatAmountInput,
-  formatCompactTRY,
+  formatCompactMoney,
   formatPercent,
   formatQuantity,
-  formatSignedTRY,
-  formatTRY,
+  formatSignedMoney,
+  formatMoney,
   parseQuantity,
-  parseTRY,
+  parseMoney,
 } from './money';
 
-describe('parseTRY', () => {
+describe('parseMoney', () => {
   it.each([
     ['1234', 123400],
     ['1234,5', 123450],
@@ -27,6 +28,9 @@ describe('parseTRY', () => {
     [' 1.234,56 ₺ ', 123456],
     ['1234 TL', 123400],
     ['1234tl', 123400],
+    ['1.234,56 €', 123456],
+    ['$ 12,50', 1250],
+    ['100 CHF', 10000],
     ['1 234,56', 123456],
     ['1 234,56', 123456],
     ['12,', 1200],
@@ -34,19 +38,19 @@ describe('parseTRY', () => {
     ['007', 700],
     ['999.999.999,99', 99999999999],
   ])('%j → %d', (input, expected) => {
-    expect(parseTRY(input)).toBe(expected);
+    expect(parseMoney(input)).toBe(expected);
   });
 
   it.each(['', '   ', 'abc', ',', '1,234,5', '12,345', '1.23.4', '1.2345,00', '1e5', '-5', '--1', '1,2,3', '12.3456', '1.000.000.000', '1.234,5.6', '₺'])(
     '%j → null',
     (input) => {
-      expect(parseTRY(input)).toBeNull();
+      expect(parseMoney(input)).toBeNull();
     },
   );
 
   it('round-trips with formatAmountInput', () => {
     for (const k of [0, 1, 5, 29, 99, 100, 115, 123456, 100000000, 99999999999, 7654321]) {
-      expect(parseTRY(formatAmountInput(k))).toBe(k);
+      expect(parseMoney(formatAmountInput(k))).toBe(k);
     }
   });
 });
@@ -69,7 +73,7 @@ describe('parseQuantity', () => {
   });
 });
 
-describe('formatTRY', () => {
+describe('formatMoney', () => {
   it.each([
     [123456, '1.234,56 ₺'],
     [0, '0,00 ₺'],
@@ -78,23 +82,23 @@ describe('formatTRY', () => {
     [-123456, '-1.234,56 ₺'],
     [99.6, '1,00 ₺'],
   ])('%d → %j', (k, expected) => {
-    expect(formatTRY(k)).toBe(expected);
+    expect(formatMoney(k)).toBe(expected);
   });
 
   it('formats signed values', () => {
-    expect(formatSignedTRY(1000)).toBe('+10,00 ₺');
-    expect(formatSignedTRY(-1000)).toBe('-10,00 ₺');
-    expect(formatSignedTRY(0)).toBe('0,00 ₺');
+    expect(formatSignedMoney(1000)).toBe('+10,00 ₺');
+    expect(formatSignedMoney(-1000)).toBe('-10,00 ₺');
+    expect(formatSignedMoney(0)).toBe('0,00 ₺');
   });
 });
 
-describe('formatCompactTRY', () => {
+describe('formatCompactMoney', () => {
   it('uses B and Mn suffixes', () => {
-    expect(formatCompactTRY(1250000)).toBe('12,5 B ₺');
-    expect(formatCompactTRY(100000)).toBe('1 B ₺');
-    expect(formatCompactTRY(120000000)).toBe('1,2 Mn ₺');
-    expect(formatCompactTRY(50000)).toBe('500 ₺');
-    expect(formatCompactTRY(0)).toBe('0 ₺');
+    expect(formatCompactMoney(1250000)).toBe('12,5 B ₺');
+    expect(formatCompactMoney(100000)).toBe('1 B ₺');
+    expect(formatCompactMoney(120000000)).toBe('1,2 Mn ₺');
+    expect(formatCompactMoney(50000)).toBe('500 ₺');
+    expect(formatCompactMoney(0)).toBe('0 ₺');
   });
 });
 
@@ -113,5 +117,16 @@ describe('formatQuantity', () => {
     expect(formatQuantity(1234.5)).toBe('1.234,5');
     expect(formatQuantity(0.00012345)).toBe('0,00012345');
     expect(formatQuantity(0.1 + 0.2)).toBe('0,3');
+  });
+});
+
+describe('selected currency', () => {
+  it('uses the active currency symbol', () => {
+    setActiveCurrency('EUR');
+    expect(formatMoney(123456)).toBe('1.234,56 €');
+    expect(formatSignedMoney(1000)).toBe('+10,00 €');
+    expect(formatCompactMoney(1250000)).toBe('12,5 B €');
+    setActiveCurrency('CHF');
+    expect(formatMoney(500)).toBe('5,00 CHF');
   });
 });

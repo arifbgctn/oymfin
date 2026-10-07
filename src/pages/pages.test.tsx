@@ -159,6 +159,22 @@ describe('settings page', () => {
     expect(localStorage.getItem('oymfin:theme')).toBeNull();
   });
 
+  it('changes the currency and shows amounts with the new symbol', async () => {
+    await seedIfNeeded();
+    await addTransaction({ type: 'expense', amountKurus: 123456, categoryId: 'cat-market', description: 'Market', date: today });
+    await db.prices.put({ symbol: 'USD', priceKurus: 4800, fetchedAt: Date.now(), source: 'currency-api' });
+    const { user } = await renderApp('#/ayarlar');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Para birimi' }), 'EUR');
+    expect(await screen.findByText('Para birimi: Euro (€)')).toBeInTheDocument();
+    expect(localStorage.getItem('oymfin:currency')).toBe('EUR');
+    expect(await db.prices.count()).toBe(0);
+
+    window.location.hash = '#/islemler';
+    expect(await screen.findByTestId('tx-row')).toHaveTextContent('1.234,56 €');
+    await user.click(screen.getByTestId('tx-row'));
+    expect(await screen.findByText('€')).toBeInTheDocument();
+  });
+
   it('exports a sync file and clears the dirty flag', async () => {
     const createObjectURL = vi.fn(() => 'blob:x');
     vi.stubGlobal('URL', Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() }));

@@ -20,6 +20,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { StatsPage } from './pages/StatsPage';
 import { TransactionsPage } from './pages/TransactionsPage';
 import { AppProvider, useApp } from './state/AppContext';
+import { useCurrency } from './state/currency';
 import { useTheme } from './state/theme';
 import { useHashRoute, type Route } from './state/useHashRoute';
 
@@ -84,10 +85,12 @@ function Page({ route }: { route: Route }) {
 function Shell() {
   const [route] = useHashRoute();
   const { txForm } = useApp();
+  const [currency] = useCurrency();
   useTheme();
   return (
     <>
-      <AppShell route={route.name} title={TITLES[route.name]} showMonth={WITH_MONTH.has(route.name)} back={BACK[route.name]}>
+      {/* Para birimi değişince tutarlar yeni simgeyle yeniden çizilsin. */}
+      <AppShell key={currency} route={route.name} title={TITLES[route.name]} showMonth={WITH_MONTH.has(route.name)} back={BACK[route.name]}>
         <Page route={route} />
       </AppShell>
       {txForm.open && <TransactionForm />}

@@ -4,7 +4,7 @@ import { CategoryPicker } from '../components/TransactionForm';
 import { AmountInput, Button, Card, ConfirmDialog, EmptyState, Field, inputClass, Modal, SegmentedTabs, useBusy } from '../components/ui';
 import { runRecurring } from '../db/recurringRunner';
 import { addRecurring, deleteRecurring, RepoError, setRecurringActive, updateRecurring } from '../db/repo';
-import { formatAmountInput, formatTRY, parseTRY } from '../domain/money';
+import { formatAmountInput, formatMoney, parseMoney } from '../domain/money';
 import { currentMonth, monthLabel } from '../domain/month';
 import type { RecurringRule, TxType } from '../domain/types';
 import { AccountPicker, suggestedAccountId } from '../components/AccountPicker';
@@ -43,7 +43,7 @@ export function RecurringForm({ rule, onClose }: { rule?: RecurringRule; onClose
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const amountKurus = parseTRY(s.amount);
+    const amountKurus = parseMoney(s.amount);
     if (amountKurus === null || amountKurus <= 0) return setError('Geçerli bir tutar girin');
     if (!options.some((c) => c.id === s.categoryId)) return setError('Kategori seçin');
     const cat = categories.find((c) => c.id === s.categoryId);
@@ -170,7 +170,7 @@ export function RecurringPage() {
                     </span>
                     <span className={`tabular shrink-0 font-semibold ${r.type === 'income' ? 'text-income' : 'text-expense'}`}>
                       {r.type === 'income' ? '+' : '−'}
-                      {formatTRY(r.amountKurus)}
+                      {formatMoney(r.amountKurus)}
                     </span>
                   </button>
                   <label className="relative inline-flex cursor-pointer items-center">

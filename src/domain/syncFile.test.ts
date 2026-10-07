@@ -62,6 +62,17 @@ describe('sync file', () => {
     if (!r.ok) expect(r.error).toMatch(msg);
   });
 
+  it('round-trips the currency setting and ignores a broken one', () => {
+    const withCurrency = buildSyncFile(sample(), 'x', 1, { currency: 'EUR', updatedAt: 42 });
+    const r = parseSyncFile(text(withCurrency));
+    expect(r.ok && r.currency).toEqual({ currency: 'EUR', updatedAt: 42 });
+
+    const broken = parseSyncFile(text({ ...withCurrency, settings: { currency: { currency: 'XYZ', updatedAt: 1 } } }));
+    expect(broken.ok).toBe(true);
+    expect(broken.ok && broken.currency).toBeUndefined();
+    expect(parseSyncFile(text(buildSyncFile(sample(), 'x', 1))).ok).toBe(true);
+  });
+
   it('rejects invalid JSON', () => {
     const r = parseSyncFile('{not json');
     expect(r).toEqual({ ok: false, error: 'Dosya okunamadı: geçerli bir JSON değil' });

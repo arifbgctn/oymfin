@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { formatCompactTRY, formatPercent, formatTRY } from '../domain/money';
+import { formatCompactMoney, formatPercent, formatMoney } from '../domain/money';
 import { monthLabel, shortMonthLabel } from '../domain/month';
 import { chartColor } from '../domain/seed';
 import type { TrendPoint } from '../domain/summary';
@@ -47,7 +47,7 @@ export function DonutChart({ slices, centerLabel, centerValue, ariaLabel }: { sl
                 onClick={() => setActive((a) => (a === s.id ? null : s.id))}
                 className="cursor-pointer transition-[stroke-width]"
               >
-                <title>{`${s.name}: ${formatTRY(s.value)} (${formatPercent(s.share * 100)})`}</title>
+                <title>{`${s.name}: ${formatMoney(s.value)} (${formatPercent(s.share * 100)})`}</title>
               </circle>
             );
             offset += len;
@@ -56,7 +56,7 @@ export function DonutChart({ slices, centerLabel, centerValue, ariaLabel }: { sl
         </svg>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
           <span className="text-xs text-muted">{hovered ? hovered.name : centerLabel}</span>
-          <span className="text-[15px] font-bold leading-tight">{hovered ? formatTRY(hovered.value) : centerValue}</span>
+          <span className="text-[15px] font-bold leading-tight">{hovered ? formatMoney(hovered.value) : centerValue}</span>
           {hovered && <span className="text-xs text-muted">{formatPercent(hovered.share * 100)}</span>}
         </div>
       </div>
@@ -77,7 +77,7 @@ export function DonutChart({ slices, centerLabel, centerValue, ariaLabel }: { sl
                 {s.name}
               </span>
               <span className="tabular text-muted">{formatPercent(s.share * 100, 0)}</span>
-              <span className="tabular w-28 text-right font-medium">{formatTRY(s.value)}</span>
+              <span className="tabular w-28 text-right font-medium">{formatMoney(s.value)}</span>
             </button>
           </li>
         ))}
@@ -114,7 +114,7 @@ export function TrendBars({ data, selected }: { data: TrendPoint[]; selected?: M
         <span className="inline-flex items-center gap-1.5">
           <span className="size-2.5 rounded-sm bg-[var(--chart-expense)]" aria-hidden /> Gider
         </span>
-        <span className="ml-auto tabular">en yüksek {formatCompactTRY(max)}</span>
+        <span className="ml-auto tabular">en yüksek {formatCompactMoney(max)}</span>
       </div>
       <div className="relative">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`Son ${data.length} ayın gelir ve gideri`}>
@@ -139,7 +139,7 @@ export function TrendBars({ data, selected }: { data: TrendPoint[]; selected?: M
                   height={H}
                   fill="transparent"
                   tabIndex={0}
-                  aria-label={`${monthLabel(d.month)}: gelir ${formatTRY(d.income)}, gider ${formatTRY(d.expense)}`}
+                  aria-label={`${monthLabel(d.month)}: gelir ${formatMoney(d.income)}, gider ${formatMoney(d.expense)}`}
                   onMouseEnter={() => setHover(i)}
                   onMouseLeave={() => setHover(null)}
                   onFocus={() => setHover(i)}
@@ -162,17 +162,17 @@ export function TrendBars({ data, selected }: { data: TrendPoint[]; selected?: M
               <span className="inline-flex items-center gap-1 text-muted">
                 <span className="size-2 rounded-sm bg-[var(--chart-income)]" /> Gelir
               </span>
-              <span className="tabular">{formatTRY(h.income)}</span>
+              <span className="tabular">{formatMoney(h.income)}</span>
             </div>
             <div className="flex justify-between gap-2">
               <span className="inline-flex items-center gap-1 text-muted">
                 <span className="size-2 rounded-sm bg-[var(--chart-expense)]" /> Gider
               </span>
-              <span className="tabular">{formatTRY(h.expense)}</span>
+              <span className="tabular">{formatMoney(h.expense)}</span>
             </div>
             <div className="mt-1 flex justify-between gap-2 border-t border-border pt-1 font-semibold">
               <span>Net</span>
-              <span className="tabular">{formatTRY(h.income - h.expense)}</span>
+              <span className="tabular">{formatMoney(h.income - h.expense)}</span>
             </div>
           </div>
         )}

@@ -2,7 +2,7 @@ import { ArrowDownWideNarrow, ArrowUpNarrowWide, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { TransactionList } from '../components/TransactionList';
 import { Card, EmptyState, IconButton, inputClass, SegmentedTabs } from '../components/ui';
-import { formatTRY } from '../domain/money';
+import { formatMoney } from '../domain/money';
 import { filterTransactions, monthSummary, sortTransactions, type SortDir, type SortKey, type TxFilter } from '../domain/summary';
 import { useAccountMap, useAccounts, useCategories, useCategoryMap, useMonthTransactions } from '../hooks/data';
 import { useApp } from '../state/AppContext';
@@ -71,7 +71,7 @@ export function TransactionsPage() {
         <div className="flex justify-between px-1 text-sm text-muted tabular">
           <span>{list.length} işlem</span>
           <span>
-            <span className="text-income">+{formatTRY(totals.income)}</span> · <span className="text-expense">−{formatTRY(totals.expense)}</span>
+            <span className="text-income">+{formatMoney(totals.income)}</span> · <span className="text-expense">−{formatMoney(totals.expense)}</span>
           </span>
         </div>
       )}

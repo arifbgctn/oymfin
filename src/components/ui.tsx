@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import { formatAmountInput, parseTRY } from '../domain/money';
+import { currencySymbol, formatAmountInput, parseMoney } from '../domain/money';
 import { useApp } from '../state/AppContext';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -108,13 +108,14 @@ export function Field({ label, error, hint, children }: { label: string; error?:
 export const inputClass =
   'block w-full min-h-11 rounded-xl border border-border bg-surface-2 px-3 text-text placeholder:text-muted focus:border-accent focus:outline-none';
 
-/** Türkçe tutar alanı: "1.234,56" yazılır; blur'da biçimlenir. */
+/** Tutar alanı (Türkçe biçim): "1.234,56" yazılır; blur'da biçimlenir. */
 export function AmountInput({ id, value, onChange, placeholder = '0,00', invalid }: { id: string; value: string; onChange: (v: string) => void; placeholder?: string; invalid?: boolean }) {
+  const symbol = currencySymbol();
   return (
     <div className="relative">
       <input
         id={id}
-        className={`${inputClass} tabular pr-9 text-right text-lg font-semibold`}
+        className={`${inputClass} tabular ${symbol.length > 1 ? 'pr-14' : 'pr-9'} text-right text-lg font-semibold`}
         inputMode="decimal"
         autoComplete="off"
         enterKeyHint="done"
@@ -123,11 +124,11 @@ export function AmountInput({ id, value, onChange, placeholder = '0,00', invalid
         aria-invalid={invalid || undefined}
         onChange={(e) => onChange(e.target.value)}
         onBlur={() => {
-          const k = parseTRY(value);
+          const k = parseMoney(value);
           if (k !== null && value.trim() !== '') onChange(formatAmountInput(k));
         }}
       />
-      <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted">₺</span>
+      <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted">{symbol}</span>
     </div>
   );
 }

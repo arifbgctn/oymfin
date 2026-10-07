@@ -35,6 +35,13 @@ describe('parseCurrencyApi', () => {
     expect(parseCurrencyApi({ foo: 1 }).size).toBe(0);
     expect(parseCurrencyApi({ try: 'nope' }).size).toBe(0);
   });
+
+  it('reads rates for another base currency', () => {
+    const m = parseCurrencyApi({ eur: { usd: 1.25, xau: 0.0005 }, try: { usd: 0.02 } }, undefined, 'eur');
+    expect(m.get('USD')).toBe(80);
+    expect(m.get('XAU_ONS')).toBe(200000);
+    expect(parseCurrencyApi({ try: { usd: 0.02 } }, undefined, 'eur').size).toBe(0);
+  });
 });
 
 describe('parseCoinGecko', () => {
@@ -45,6 +52,10 @@ describe('parseCoinGecko', () => {
     expect(m.has('SOL')).toBe(false);
     expect(m.has('XRP')).toBe(false);
     expect(parseCoinGecko('x').size).toBe(0);
+  });
+
+  it('reads the requested vs currency', () => {
+    expect(parseCoinGecko({ bitcoin: { usd: 100000, try: 4110163 } }, undefined, 'usd').get('BTC')).toBe(10000000);
   });
 });
 

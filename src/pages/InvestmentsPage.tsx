@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { DonutChart } from '../components/charts';
 import { AmountInput, Badge, Button, Card, EmptyState, Field, inputClass, Modal, SegmentedTabs, useBusy } from '../components/ui';
 import { addAsset, RepoError } from '../db/repo';
-import { formatPercent, formatQuantity, formatSignedTRY, formatTRY, parseTRY } from '../domain/money';
+import { formatPercent, formatQuantity, formatSignedMoney, formatMoney, parseMoney } from '../domain/money';
 import { formatDateTimeShort } from '../domain/month';
 import { portfolioSummary } from '../domain/portfolio';
 import { AUTO_SYMBOL_MAP, AUTO_SYMBOLS, KIND_COLORS, KIND_EMOJI, KIND_LABELS, kindSupportsAuto } from '../domain/prices';
@@ -19,7 +19,7 @@ function PnL({ kurus, pct }: { kurus: number | null; pct: number | null }) {
   if (kurus === null) return <span className="text-muted">—</span>;
   return (
     <span className={kurus >= 0 ? 'text-income' : 'text-expense'}>
-      {formatSignedTRY(kurus)}
+      {formatSignedMoney(kurus)}
       {pct !== null && ` (${pct >= 0 ? '+' : ''}${formatPercent(pct)})`}
     </span>
   );
@@ -58,7 +58,7 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
     if (!finalName) return setError('Varlık adı girin (örn. THYAO, Ziraat vadeli)');
     let manualPriceKurus: number | undefined;
     if (!isAuto && price.trim()) {
-      const k = parseTRY(price);
+      const k = parseMoney(price);
       if (k === null) return setError('Geçerli bir fiyat girin');
       manualPriceKurus = k;
     }
@@ -166,7 +166,7 @@ export function InvestmentsPage() {
             <div>
               <div className="text-xs font-medium text-muted">Portföy değeri</div>
               <div className="mt-1 text-3xl font-bold tracking-tight" data-testid="portfolio-value">
-                {formatTRY(s.totalValueKurus)}
+                {formatMoney(s.totalValueKurus)}
               </div>
             </div>
             {hasAuto && (
@@ -178,7 +178,7 @@ export function InvestmentsPage() {
           <dl className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
             <div>
               <dt className="text-xs text-muted">Maliyet</dt>
-              <dd className="font-semibold tabular">{formatTRY(s.totalCostKurus)}</dd>
+              <dd className="font-semibold tabular">{formatMoney(s.totalCostKurus)}</dd>
             </div>
             <div>
               <dt className="text-xs text-muted">Kâr/Zarar</dt>
@@ -204,7 +204,7 @@ export function InvestmentsPage() {
       )}
       {slices.length > 1 && (
         <Card title="Dağılım">
-          <DonutChart slices={slices} centerLabel="Toplam" centerValue={formatTRY(s.totalValueKurus)} ariaLabel="Varlık türlerine göre portföy dağılımı" />
+          <DonutChart slices={slices} centerLabel="Toplam" centerValue={formatMoney(s.totalValueKurus)} ariaLabel="Varlık türlerine göre portföy dağılımı" />
         </Card>
       )}
       <div className="flex items-center justify-between">
@@ -233,10 +233,10 @@ export function InvestmentsPage() {
               <div className="mt-2 flex items-end justify-between gap-2">
                 <div className="text-sm text-muted">
                   {formatQuantity(position.quantity)} {AUTO_SYMBOL_MAP.get(asset.symbol)?.unit ?? 'adet'}
-                  <div className="text-xs">{priceKurus !== null ? `${formatTRY(priceKurus)} · ` : ''}{priceLabel(asset, prices)}</div>
+                  <div className="text-xs">{priceKurus !== null ? `${formatMoney(priceKurus)} · ` : ''}{priceLabel(asset, prices)}</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold tabular">{valuation.valueKurus !== null ? formatTRY(valuation.valueKurus) : '—'}</div>
+                  <div className="font-bold tabular">{valuation.valueKurus !== null ? formatMoney(valuation.valueKurus) : '—'}</div>
                   <div className="text-xs font-semibold tabular">
                     <PnL kurus={position.quantity > 0 ? valuation.unrealizedKurus : null} pct={valuation.unrealizedPct} />
                   </div>
